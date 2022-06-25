@@ -88,7 +88,19 @@ export class UniversitiesService {
                 return item;
             }
         });
-         return preRank;
+         return {
+             [`${this.currentYear}`]:{
+                 '分数':rank[0],
+                 '同分人数':rank[1],
+                 '排名':rank[2],
+             },
+             [`${this.currentYear-1}`]:{
+                 '分数':preRank[0],
+                 '同分人数':preRank[1],
+                 '排名':preRank[2],
+             }
+
+         };
     }
 
     private async physicsRecommend(score:number) {
@@ -103,7 +115,19 @@ export class UniversitiesService {
                 return item;
             }
         });
-        return preRank;
+        return {
+            [`${this.currentYear}`]:{
+                '分数':rank[0],
+                '同分人数':rank[1],
+                '排名':rank[2],
+            },
+            [`${this.currentYear-1}`]:{
+                '分数':preRank[0],
+                '同分人数':preRank[1],
+                '排名':preRank[2],
+            }
+
+        };
     }
 
     private async filterPhysics(score:number) {
