@@ -5,27 +5,27 @@ import xlsx from 'node-xlsx';
 @Injectable()
 export class UniversitiesService {
     private readonly currentYear:number = 2022;
-    async find(subject,score) {
+     find(subject,score) {
         if(subject === 'history'){
-            return this.filterHistory(score);
+            return this.filterHistory(this.currentYear-1,score);
         }else if(subject === 'physics'){
-            return this.filterPhysics(score);
+            return this.filterPhysics(this.currentYear-1,score);
         }else{
             return '科目只支持"历史=history"或者"物理=physics"';
         }
     }
 
-    async recommend(subject,score,limitNumber) {
+     recommend(subject,score,limitNumber) {
         if(subject === 'history'){
-            return this.historyRecommend(score);
+            return this.historyRecommend(score,limitNumber);
         }else if(subject === 'physics'){
-            return this.physicsRecommend(score);
+            return this.physicsRecommend(score,limitNumber);
         }else{
             return '科目只支持"历史=history"或者"物理=physics"';
         }
     }
 
-    async findAll(subject:Subject,year) {
+    findAll(subject:Subject,year) {
         const filename = `${year}/${year}-${subject}.xlsx`
         // Parse a file
         let data = this.readFile(filename);
@@ -34,7 +34,7 @@ export class UniversitiesService {
         return data;
     }
 
-    async findRankDetails(subject:Subject,year:number,score:number){
+    findRankDetails(subject:Subject,year:number,score:number){
         const filename = `${year}/${year}-${subject}-rank.xlsx`
         // Parse a file
         const data = this.readFile(filename);
@@ -76,7 +76,7 @@ export class UniversitiesService {
         }
     }
 
-    private async historyRecommend(score:number) {
+    private async historyRecommend(score:number,limitNumber) {
         const rankData = this.readFile(`${this.currentYear}/${this.currentYear}-history-rank.xlsx`);
         const rank = this.findRank(rankData,'history',this.currentYear,score);
         if(rank[1]===0 && rank[2] === 0){
@@ -88,22 +88,29 @@ export class UniversitiesService {
                 return item;
             }
         });
-         return {
-             [`${this.currentYear}`]:{
-                 '分数':rank[0],
-                 '同分人数':rank[1],
-                 '排名':rank[2],
-             },
-             [`${this.currentYear-1}`]:{
-                 '分数':preRank[0],
-                 '同分人数':preRank[1],
-                 '排名':preRank[2],
-             }
+        const res = this.filterHistory(this.currentYear-1,preRank[0]).slice(0,limitNumber);
+        return {
+            '分数及排名': {
+                [`${this.currentYear}`]:{
+                    '分数':rank[0],
+                    '同分人数':rank[1],
+                    '排名':rank[2],
+                },
+                [`${this.currentYear-1}`]:{
+                    '分数':preRank[0],
+                    '同分人数':preRank[1],
+                    '排名':preRank[2],
+                }
 
-         };
+            },
+            '学校推荐':{
+                '学校填报信息':res
+            }
+
+        }
     }
 
-    private async physicsRecommend(score:number) {
+    private  physicsRecommend(score:number,limitNumber) {
         const rankData = this.readFile(`${this.currentYear}/${this.currentYear}-physics-rank.xlsx`);
         const rank = this.findRank(rankData,'physics',this.currentYear,score);
         if(rank[1]===0 && rank[2] === 0){
@@ -115,23 +122,30 @@ export class UniversitiesService {
                 return item;
             }
         });
+        const res = this.filterPhysics(this.currentYear-1,preRank[0]).slice(0,limitNumber);
         return {
-            [`${this.currentYear}`]:{
-                '分数':rank[0],
-                '同分人数':rank[1],
-                '排名':rank[2],
+            '分数及排名': {
+                [`${this.currentYear}`]:{
+                    '分数':rank[0],
+                    '同分人数':rank[1],
+                    '排名':rank[2],
+                },
+                [`${this.currentYear-1}`]:{
+                    '分数':preRank[0],
+                    '同分人数':preRank[1],
+                    '排名':preRank[2],
+                }
+
             },
-            [`${this.currentYear-1}`]:{
-                '分数':preRank[0],
-                '同分人数':preRank[1],
-                '排名':preRank[2],
+            '学校推荐':{
+                '学校填报信息':res
             }
 
-        };
+        }
     }
 
-    private async filterPhysics(score:number) {
-        let data = this.readFile('2021/2021-physics.xlsx');
+    private filterPhysics(year,score:number) {
+        let data = this.readFile(`${year}/${year}-physics.xlsx`);
 
         data = this.filterAndDesc(data, score);
         data = this.parseString(data);
@@ -145,8 +159,8 @@ export class UniversitiesService {
         return data;
     }
 
-    private async filterHistory(score:number) {
-        let data = this.readFile('2021/2021-history.xlsx');
+    private  filterHistory(year,score:number) {
+        let data = this.readFile(`${year}/${year}-history.xlsx`);
         data = this.filterAndDesc(data, score);
         data = this.parseString(data);
         return data;
