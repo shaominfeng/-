@@ -1,6 +1,5 @@
 import {HttpException, HttpStatus, Injectable} from '@nestjs/common';
 import {Subject} from "./entities/universities.interface";
-const readXlsxFile = require('read-excel-file/node')
 import xlsx from 'node-xlsx';
 @Injectable()
 export class UniversitiesService {
