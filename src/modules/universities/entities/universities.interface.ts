@@ -1,1 +1,1 @@
-export type Subject = 'physics'|'history'
+export type Subject = 'physics' | 'history';

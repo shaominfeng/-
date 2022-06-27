@@ -1,4 +1,4 @@
 export class UserInfoDto {
-    subject:string;
-    score:number
+  subject: string;
+  score: number;
 }
