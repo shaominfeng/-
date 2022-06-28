@@ -5,6 +5,7 @@ import path from 'path';
 @Injectable()
 export class UniversitiesService {
   private readonly currentYear: number = 2022;
+  private readonly upScore = 5;
   find(subject, score) {
     if (subject === 'history') {
       return this.filterHistory(this.currentYear - 1, score);
@@ -15,11 +16,11 @@ export class UniversitiesService {
     }
   }
 
-  recommend(subject, score, limitNumber) {
+  recommend(subject, score, offset, limitNumber) {
     if (subject === 'history') {
-      return this.historyRecommend(score, limitNumber);
+      return this.historyRecommend(score, offset, limitNumber);
     } else if (subject === 'physics') {
-      return this.physicsRecommend(score, limitNumber);
+      return this.physicsRecommend(score, offset, limitNumber);
     } else {
       return '科目只支持"历史=history"或者"物理=physics"';
     }
@@ -69,7 +70,7 @@ export class UniversitiesService {
 
   private readFile(filename: string) {
     try {
-      const filePath = path.join(__dirname,`../../file/${filename}`);
+      const filePath = path.join(__dirname, `../../file/${filename}`);
       const workSheetsFromFile = xlsx.parse(`${filePath}`);
       return workSheetsFromFile[0].data;
     } catch (error) {
@@ -77,7 +78,7 @@ export class UniversitiesService {
     }
   }
 
-  private async historyRecommend(score: number, limitNumber) {
+  private async historyRecommend(score: number, offset: number, limitNumber) {
     const rankData = this.readFile(`${this.currentYear}/${this.currentYear}-history-rank.xlsx`);
     const rank = this.findRank(rankData, 'history', this.currentYear, score);
     if (rank[1] === 0 && rank[2] === 0) {
@@ -89,7 +90,7 @@ export class UniversitiesService {
         return item;
       }
     });
-    const res = this.filterHistory(this.currentYear - 1, preRank[0]).slice(0, limitNumber);
+    const res = this.filterHistory(this.currentYear - 1, preRank[0],offset).slice(0, limitNumber);
     return {
       scoreAndRank: {
         [`${this.currentYear}`]: {
@@ -109,7 +110,7 @@ export class UniversitiesService {
     };
   }
 
-  private physicsRecommend(score: number, limitNumber) {
+  private physicsRecommend(score: number, offset: number, limitNumber) {
     const rankData = this.readFile(`${this.currentYear}/${this.currentYear}-physics-rank.xlsx`);
     const rank = this.findRank(rankData, 'physics', this.currentYear, score);
     if (rank[1] === 0 && rank[2] === 0) {
@@ -121,7 +122,7 @@ export class UniversitiesService {
         return item;
       }
     });
-    const res = this.filterPhysics(this.currentYear - 1, preRank[0]).slice(0, limitNumber);
+    const res = this.filterPhysics(this.currentYear - 1, preRank[0], Number(offset)).slice(0, limitNumber);
     return {
       scoreAndRank: {
         [`${this.currentYear}`]: {
@@ -141,23 +142,25 @@ export class UniversitiesService {
     };
   }
 
-  private filterPhysics(year, score: number) {
+  private filterPhysics(year, score: number, offset = 0) {
     let data = this.readFile(`${year}/${year}-physics.xlsx`);
 
-    data = this.filterAndDesc(data, score);
+    data = this.filterAndDesc(data, score, Number(offset));
     data = this.parseString(data);
     return data;
   }
 
-  private filterAndDesc(data: any[], score: number) {
-    data = data.filter((s) => s[2] <= score);
+  private filterAndDesc(data: any[], score: number, offset = 0) {
+    const max = Math.max(score + offset ,score);
+    const min = Math.min(score + offset ,score);
+    data = data.filter((s) => (s[2] <= max && s[2] >= min));
     data.sort((a, b) => b[2] - a[2]);
     return data;
   }
 
-  private filterHistory(year, score: number) {
+  private filterHistory(year, score: number,offset = 0) {
     let data = this.readFile(`${year}/${year}-history.xlsx`);
-    data = this.filterAndDesc(data, score);
+    data = this.filterAndDesc(data, score,Number(offset));
     data = this.parseString(data);
     return data;
   }

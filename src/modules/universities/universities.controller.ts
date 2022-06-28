@@ -11,13 +11,14 @@ export class UniversitiesController {
     return this.universitiesService.find(subject, score);
   }
 
-  @Get('universities/subject/:subject/score/:score/recommend/:limitNumber')
+  @Get('universities/subject/:subject/score/:score/offset/:offset/recommend/:limitNumber')
   universityRecommend(
     @Param('subject') subject: Subject,
     @Param('score') score: number,
+    @Param('offset') offset: number,
     @Param('limitNumber') limitNumber: number,
   ) {
-    return this.universitiesService.recommend(subject, score, limitNumber);
+    return this.universitiesService.recommend(subject, score, offset, limitNumber);
   }
 
   @Get('universities/year/:year/subject/:subject')
