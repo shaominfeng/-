@@ -41,16 +41,16 @@ export class UniversitiesService {
     const rank = this.findRank(data, subject, year, score);
     if (rank[0] >= data[0][0]) {
       return {
-        分数: data[0][0],
-        同分人数: data[0][1],
-        排名: data[0][2],
-        提示: '恭喜你，你的分数已经突破天际，我们无法准确查到你的具体排名了！',
+        score: data[0][0],
+        samScoreNumber: data[0][1],
+        rank: data[0][2],
+        message: '恭喜你，你的分数已经突破天际，我们无法准确查到你的具体排名了！',
       };
     } else {
       return {
-        分数: rank[0],
-        同分人数: rank[1],
-        排名: rank[2],
+        score: rank[0],
+        samScoreNumber: rank[1],
+        rank: rank[2],
       };
     }
   }
@@ -91,20 +91,20 @@ export class UniversitiesService {
     });
     const res = this.filterHistory(this.currentYear - 1, preRank[0]).slice(0, limitNumber);
     return {
-      分数及排名: {
+      scoreAndRank: {
         [`${this.currentYear}`]: {
-          分数: rank[0],
-          同分人数: rank[1],
-          排名: rank[2],
+          score: rank[0],
+          sameScoreNumber: rank[1],
+          rank: rank[2],
         },
         [`${this.currentYear - 1}`]: {
-          分数: preRank[0],
-          同分人数: preRank[1],
-          排名: preRank[2],
+          score: preRank[0],
+          sameScoreNumber: preRank[1],
+          rank: preRank[2],
         },
       },
-      学校推荐: {
-        学校填报信息: res,
+      school: {
+        schoolInfo: res,
       },
     };
   }
@@ -123,20 +123,20 @@ export class UniversitiesService {
     });
     const res = this.filterPhysics(this.currentYear - 1, preRank[0]).slice(0, limitNumber);
     return {
-      分数及排名: {
+      scoreAndRank: {
         [`${this.currentYear}`]: {
-          分数: rank[0],
-          同分人数: rank[1],
-          排名: rank[2],
+          score: rank[0],
+          sameScoreNumber: rank[1],
+          rank: rank[2],
         },
         [`${this.currentYear - 1}`]: {
-          分数: preRank[0],
-          同分人数: preRank[1],
-          排名: preRank[2],
+          score: preRank[0],
+          sameScoreNumber: preRank[1],
+          rank: preRank[2],
         },
       },
-      学校推荐: {
-        学校填报信息: res,
+      school: {
+        schoolInfo: res,
       },
     };
   }
@@ -164,16 +164,16 @@ export class UniversitiesService {
 
   private parseString(data: any[]) {
     return data.map((item) => ({
-      院校代号: item[0],
-      '院校、专业组（再选科目要求）': item[1],
-      投档最低分: item[2],
-      投档最低分同分考生排序项: {
-        语数成绩: item[3],
-        语数最高成绩: item[4],
-        外语成绩: item[5],
-        首选科目成绩: item[6],
-        再选科目最高成绩: item[7],
-        志愿号: item[8],
+      schoolId: item[0],
+      required: item[1],
+      lowestScore: item[2],
+      sortRule: {
+        chineseAndMath: item[3],
+        chineseAndMathHighest: item[4],
+        english: item[5],
+        firstSubject: item[6],
+        secondSubject: item[7],
+        id: item[8],
       },
     }));
   }
