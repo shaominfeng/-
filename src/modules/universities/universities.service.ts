@@ -151,9 +151,14 @@ export class UniversitiesService {
   }
 
   private filterAndDesc(data: any[], score: number, offset = 0) {
-    const max = Math.max(score + offset ,score);
-    const min = Math.min(score + offset ,score);
-    data = data.filter((s) => (s[2] <= max && s[2] >= min));
+    if(offset !== 0){
+      const max = Math.max(score + offset ,score);
+      const min = Math.min(score + offset ,score);
+      data = data.filter((s) => (s[2] <= max && s[2] >= min));
+    }else{
+      data = data.filter((s) => (s[2] <= score));
+    }
+
     data.sort((a, b) => b[2] - a[2]);
     return data;
   }
