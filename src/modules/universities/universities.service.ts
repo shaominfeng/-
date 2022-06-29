@@ -146,11 +146,14 @@ export class UniversitiesService {
     const self = this;
     const rankData = this.readFile(`${year}/${year}-physics-rank.xlsx`);
     let data = this.readFile(`${year}/${year}-physics.xlsx`);
-   data.forEach(item=>{
-     item[9] = self.findRank(rankData, 'physics', year, item[2])
-   })
+   // data.forEach(item=>{
+   //   item[9] = self.findRank(rankData, 'physics', year, item[2])
+   // })
     data = this.filterAndDesc(data, score, Number(offset));
     data = this.parseString(data);
+    data.forEach(item=>{
+      item["lastYearRank"] = (self.findRank(rankData, 'physics', year, (item as any).lowestScore))[2]
+    })
     return data;
   }
 
@@ -171,11 +174,14 @@ export class UniversitiesService {
     const self = this;
     const rankData = this.readFile(`${year}/${year}-history-rank.xlsx`);
     let data = this.readFile(`${year}/${year}-history.xlsx`);
-    data.forEach(item=>{
-      item[9] = self.findRank(rankData, 'history', year, item[2])
-    })
+    // data.forEach(item=>{
+    //   item[9] = self.findRank(rankData, 'history', year, item[2])
+    // })
     data = this.filterAndDesc(data, score,Number(offset));
     data = this.parseString(data);
+    data.forEach(item=>{
+      item["lastYearRank"] = (self.findRank(rankData, 'history', year, (item as any).lowestScore))[2]
+    })
     return data;
   }
 
@@ -184,7 +190,6 @@ export class UniversitiesService {
       schoolId: item[0],
       required: item[1],
       lowestScore: item[2],
-      lastYearRank:item[9][2],
       sortRule: {
         chineseAndMath: item[3],
         chineseAndMathHighest: item[4],
