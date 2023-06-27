@@ -34,6 +34,7 @@
     "@nestjs/throttler": "^2.0.1",
     "@types/lodash.merge": "4.6.7",
     "bull": "^4.8.3",
+    "dayjs": "^1.11.8",
     "helmet": "^5.1.0",
     "lodash.merge": "4.6.2",
     "mongoose": "6.3.6",

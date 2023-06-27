@@ -1,14 +1,15 @@
-import {HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common';
+import { HttpException, HttpStatus, Injectable, Logger } from '@nestjs/common';
 import { Subject } from './entities/universities.interface';
 import xlsx from 'node-xlsx';
 import path from 'path';
+import dayjs from 'dayjs';
 @Injectable()
 export class UniversitiesService {
   private readonly logger = new Logger(UniversitiesService.name);
-  private readonly currentYear: number = 2023;
+  private readonly currentYear: number = dayjs().year();
   private readonly upScore = 5;
   find(subject, score) {
-    try{
+    try {
       if (subject === 'history') {
         return this.filterHistory(this.currentYear - 1, score);
       } else if (subject === 'physics') {
@@ -37,7 +38,7 @@ export class UniversitiesService {
     // Parse a file
     let data = this.readFile(filename);
     data.sort((a, b) => b[2] - a[2]);
-    data = this.parseString(data);
+    data = this.parseString(year,data);
     return data;
   }
 
@@ -45,7 +46,7 @@ export class UniversitiesService {
     const filename = `${year}/${year}-${subject}-rank.xlsx`;
     // Parse a file
     const data = this.readFile(filename);
-    const rank = this.findRank(data, subject, year, score);
+    const rank = this.findRankByScore(data, subject, year, score);
     if (rank[0] >= data[0][0]) {
       return {
         score: data[0][0],
@@ -62,9 +63,12 @@ export class UniversitiesService {
     }
   }
 
-  findRank(data, subject: Subject, year: number, score: number) {
+  findRankByScore(data, subject: Subject, year: number, score: number) {
     if (Number(score) >= data[0][0]) {
       return [score, 0, 0];
+    }
+    if(Number(score) < data[data.length - 1][0]) {
+      return [data[data.length - 1][0], data[data.length - 1][1], data[data.length - 1][2]];
     }
     const result = data.find(function (item) {
       if (item[0] === Number(score)) {
@@ -86,7 +90,7 @@ export class UniversitiesService {
 
   private async historyRecommend(score: number, offset: number, limitNumber) {
     const rankData = this.readFile(`${this.currentYear}/${this.currentYear}-history-rank.xlsx`);
-    const rank = this.findRank(rankData, 'history', this.currentYear, score);
+    const rank = this.findRankByScore(rankData, 'history', this.currentYear, score);
     if (rank[1] === 0 && rank[2] === 0) {
       return '恭喜你，你的分数已经突破天际，学校任你选！';
     }
@@ -118,7 +122,7 @@ export class UniversitiesService {
 
   private physicsRecommend(score: number, offset: number, limitNumber) {
     const rankData = this.readFile(`${this.currentYear}/${this.currentYear}-physics-rank.xlsx`);
-    const rank = this.findRank(rankData, 'physics', this.currentYear, score);
+    const rank = this.findRankByScore(rankData, 'physics', this.currentYear, score);
     if (rank[1] === 0 && rank[2] === 0) {
       return '恭喜你，你的分数已经突破天际，学校任你选！';
     }
@@ -152,14 +156,11 @@ export class UniversitiesService {
     const self = this;
     const rankData = this.readFile(`${year}/${year}-physics-rank.xlsx`);
     let data = this.readFile(`${year}/${year}-physics.xlsx`);
-   // data.forEach(item=>{
-   //   item[9] = self.findRank(rankData, 'physics', year, item[2])
-   // })
     data = this.filterAndDesc(data, score, Number(offset));
-    data = this.parseString(data);
+    data = this.parseString(year,data);
     data.forEach(item=>{
-      item["lastYearRank"] = (self.findRank(rankData, 'physics', year, (item as any).lowestScore))[2]
-    })
+      item["lastYearRank"] = (self.findRankByScore(rankData, 'physics', year, (item as any)[year].lowestScore))[2]
+    });
     return data;
   }
 
@@ -179,30 +180,45 @@ export class UniversitiesService {
   private filterHistory(year, score: number,offset = 0) {
     const self = this;
     const rankData = this.readFile(`${year}/${year}-history-rank.xlsx`);
-    let data = this.readFile(`${year}/${year}-history.xlsx`);
-    // data.forEach(item=>{
-    //   item[9] = self.findRank(rankData, 'history', year, item[2])
-    // })
-    data = this.filterAndDesc(data, score,Number(offset));
-    data = this.parseString(data);
-    data.forEach(item=>{
-      item['lastYearRank'] = self.findRank(rankData, 'history', year, (item as any).lowestScore)[2];
-    })
-    return data;
+    const lastRankData = this.readFile(`${year - 1}/${year - 1}-history-rank.xlsx`);
+    let scoreData = this.readFile(`${year}/${year}-history.xlsx`);
+    scoreData = this.filterAndDesc(scoreData, score, Number(offset));
+    scoreData = this.parseString(year, scoreData);
+
+    const lastYearScoreData = this.readFile(`${year - 1}/${year - 1}-history.xlsx`);
+
+    scoreData.forEach((item: any) => {
+      item[`${year}`]['rank'] = self.findRankByScore(rankData, 'history', year, (item as any)[year].lowestScore)[2];
+      const temp= self.findScoreBySchoolName(lastYearScoreData, item.required);
+      if(temp) {
+        item[`${year - 1}`] = {
+          lowestScore: temp[2],
+          rank: self.findRankByScore(lastRankData, 'history', year - 1, temp[2])[2],
+        }
+      }
+    });
+    return scoreData;
   }
 
-  private parseString(data: any[]) {
+  private findScoreBySchoolName(data: any[], schoolId: string) {
+    const result = data.filter((item) => item[1] === schoolId);
+    return result[0];
+  }
+
+  private parseString(year: number, data: any[]) {
     return data.map((item) => ({
       schoolId: item[0],
       required: item[1],
-      lowestScore: item[2],
-      sortRule: {
-        chineseAndMath: item[3],
-        chineseAndMathHighest: item[4],
-        english: item[5],
-        firstSubject: item[6],
-        secondSubject: item[7],
-        id: item[8],
+      [year]: {
+        lowestScore: item[2],
+        sortRule: {
+          chineseAndMath: item[3],
+          chineseAndMathHighest: item[4],
+          english: item[5],
+          firstSubject: item[6],
+          secondSubject: item[7],
+          id: item[8],
+        },
       },
     }));
   }
