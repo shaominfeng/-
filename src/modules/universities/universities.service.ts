@@ -1,18 +1,24 @@
-import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
+import {HttpException, HttpStatus, Injectable, Logger} from '@nestjs/common';
 import { Subject } from './entities/universities.interface';
 import xlsx from 'node-xlsx';
 import path from 'path';
 @Injectable()
 export class UniversitiesService {
-  private readonly currentYear: number = 2022;
+  private readonly logger = new Logger(UniversitiesService.name);
+  private readonly currentYear: number = 2023;
   private readonly upScore = 5;
   find(subject, score) {
-    if (subject === 'history') {
-      return this.filterHistory(this.currentYear - 1, score);
-    } else if (subject === 'physics') {
-      return this.filterPhysics(this.currentYear - 1, score);
-    } else {
-      return '科目只支持"历史=history"或者"物理=physics"';
+    try{
+      if (subject === 'history') {
+        return this.filterHistory(this.currentYear - 1, score);
+      } else if (subject === 'physics') {
+        return this.filterPhysics(this.currentYear - 1, score);
+      } else {
+        return '科目只支持"历史=history"或者"物理=physics"';
+      }
+    } catch (e) {
+      this.logger.error(e.message);
+      throw new HttpException(e.message, HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 
@@ -180,7 +186,7 @@ export class UniversitiesService {
     data = this.filterAndDesc(data, score,Number(offset));
     data = this.parseString(data);
     data.forEach(item=>{
-      item["lastYearRank"] = (self.findRank(rankData, 'history', year, (item as any).lowestScore))[2]
+      item['lastYearRank'] = self.findRank(rankData, 'history', year, (item as any).lowestScore)[2];
     })
     return data;
   }
